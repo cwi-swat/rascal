@@ -377,7 +377,7 @@
             <dependency>
                 <groupId>io.usethesource</groupId>
                 <artifactId>vallang</artifactId>
-                <version>0.13.0</version>
+                <version>0.13.2-RC1</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
@@ -438,11 +438,6 @@
                 <groupId>org.nanohttpd</groupId>
                 <artifactId>nanohttpd</artifactId>
                 <version>2.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ibm.icu</groupId>
-                <artifactId>icu4j</artifactId>
-                <version>58.1</version>
             </dependency>
             <dependency>
                 <groupId>org.asciidoctor</groupId>

@@ -9,31 +9,55 @@
 module lang::rascal::tests::library::DateTime
   
 import DateTime;
+import util::Math;
+import IO;
 
 import String;
 
-test bool createDate_sampled(datetime gen)  =
-		date.year == gen.year && date.month == gen.month && date.day == gen.day
-	when 
-		date := createDate(gen.year, gen.month, gen.day);
+test bool createDate_sampled(datetime gen) {
+	if (gen.isTime) {
+		return true;
+	}
+	date = createDate(gen.year, gen.month, gen.day);
+	return date.year == gen.year && date.month == gen.month && date.day == gen.day;
+}
 
-test bool createTime_sampled(datetime gen) =
-        time.hour == gen.hour && time.minute == gen.minute && time.second == gen.second && time.millisecond == gen.millisecond
-	when
-		time := createTime(gen.hour, gen.minute, gen.second, gen.millisecond);
-		
-test bool printDate_simpleFormat(datetime gen) =
-    printDate(gen) == formattedDate(gen);
-    
-test bool printTime_simpleFormat(datetime gen) =
-    printTime(gen) == formattedTime(gen);
-    
-test bool printDateTime_simpleFormat(datetime gen) =
-    printDateTime(gen) == "<formattedDate(gen)> <formattedTime(gen)>";
+test bool createTime_sampled(datetime gen) {
+	if (gen.isDate) {
+		return true;
+	} 
+	time = createTime(gen.hour, gen.minute, gen.second, gen.millisecond);
+	return time.hour == gen.hour && time.minute == gen.minute && time.second == gen.second && time.millisecond == gen.millisecond;
+}
 
-test bool incrementDays_withOneDay(datetime gen) =
-  gen.year > 1751 ? incrementDays(createDate(gen.year, gen.month, gen.day)) == incDateByOneDay(gen) : true;
-  // TIL; apparently before the year 1752 the US was still on the Julian calendar which calculated a leap year every 4 years. The algorithm used here only works for the Gregorian calendar 
+test bool printDate_simpleFormat(datetime gen) {
+	if (!gen.isDate) {
+		return true;
+	} 
+	return printDate(gen) == formattedDate(gen);
+}
+    
+test bool printTime_simpleFormat(datetime gen) {
+	if (gen.isDate) {
+		return true;
+	} 
+    return printTime(gen) == formattedTime(gen);
+}
+    
+test bool printDateTime_simpleFormat(datetime gen) {
+	if (!gen.isDateTime) {
+		return true;
+	} 
+	return printDateTime(gen) == "<formattedDate(gen)> <formattedTime(gen)>";
+}
+
+test bool incrementDays_withOneDay(datetime gen) {
+	if (gen.isTime) {
+		return true;
+	}
+	// TIL; apparently before the year 1752 the US was still on the Julian calendar which calculated a leap year every 4 years. The algorithm used here only works for the Gregorian calendar 
+	return gen.year > 1751 ? incrementDays(createDate(gen.year, gen.month, gen.day)) == incDateByOneDay(gen) : true;
+}
 
 // Increment a date by a day according to the Gregorian calendar algorithm for leap year calculation
 datetime incDateByOneDay(datetime dt) {
@@ -70,8 +94,10 @@ str formattedDate(datetime dt) =
     "<fill(dt.year, 4)>-<fill(dt.month)>-<fill(dt.day)>";
     
 str formattedTime(datetime dt) =
-    "<fill(dt.hour)>:<fill(dt.minute)>:<fill(dt.second)>.<fill(dt.millisecond,3)>+<fill(dt.timezoneOffsetHours)><fill(dt.timezoneOffsetMinutes)>";        
+    "<fill(dt.hour)>:<fill(dt.minute)>:<fill(dt.second)>.<fill(dt.millisecond,3)><isZulu(dt) ? "Z" : "<negativeOffset(dt) ? "-" : "+"><fill(abs(dt.timezoneOffsetHours))>:<fill(abs(dt.timezoneOffsetMinutes))>">";        
 
+bool negativeOffset(datetime dt) = dt.timezoneOffsetHours < 0 || dt.timezoneOffsetMinutes < 0;
+bool isZulu(datetime dt) = dt.timezoneOffsetHours == 0 && dt.timezoneOffsetMinutes == 0;
 private str fill(int val) = fill(val, 2);
 private str fill(int val, int n) = right("<val>", n, "0");
     

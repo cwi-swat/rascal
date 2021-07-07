@@ -1,21 +1,23 @@
 /*******************************************************************************
- * Copyright (c) 2009-2013 CWI
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2009-2013 CWI All rights reserved. This program and the accompanying materials are
+ * made available under the terms of the Eclipse Public License v1.0 which accompanies this
+ * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
-
- *   * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI
- *   * Mark Hills - Mark.Hills@cwi.nl (CWI)
- *   * Arnold Lankamp - Arnold.Lankamp@cwi.nl
-*******************************************************************************/
+ * 
+ * * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI * Mark Hills - Mark.Hills@cwi.nl (CWI) * Arnold
+ * Lankamp - Arnold.Lankamp@cwi.nl
+ *******************************************************************************/
 package org.rascalmpl.interpreter.result;
 
 import static org.rascalmpl.interpreter.result.ResultFactory.bool;
 import static org.rascalmpl.interpreter.result.ResultFactory.makeResult;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 import java.util.Iterator;
 
 import org.rascalmpl.exceptions.RuntimeExceptionFactory;
@@ -24,6 +26,8 @@ import org.rascalmpl.interpreter.staticErrors.InvalidDateTimeComparison;
 import org.rascalmpl.interpreter.staticErrors.UndeclaredField;
 import org.rascalmpl.interpreter.staticErrors.UnexpectedType;
 import org.rascalmpl.interpreter.staticErrors.UnsupportedOperation;
+import org.rascalmpl.util.DateTimeConversions;
+import org.rascalmpl.values.ValueFactoryFactory;
 
 import io.usethesource.vallang.IBool;
 import io.usethesource.vallang.IDateTime;
@@ -34,9 +38,6 @@ import io.usethesource.vallang.exceptions.InvalidDateTimeException;
 import io.usethesource.vallang.type.Type;
 import io.usethesource.vallang.type.TypeFactory;
 import io.usethesource.vallang.type.TypeStore;
-import org.rascalmpl.values.ValueFactoryFactory;
-
-import com.ibm.icu.util.Calendar;
 
 public class DateTimeResult extends ElementResult<IDateTime> {
 
@@ -65,8 +66,7 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override
 	protected Result<IBool> equalToDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return bool(that.value.getInstant() == this.value.getInstant(), ctx);
+		return bool(that.value.equals(this.value), ctx);
 	}
 		
 	@Override
@@ -76,8 +76,7 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override
 	protected Result<IBool> nonEqualToDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return bool(that.value.getInstant() != this.value.getInstant(), ctx);
+		return bool(!that.value.equals(this.value), ctx);
 	}
 
 	@Override
@@ -282,26 +281,18 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 		}
 	}
 
-	private void checkDateTimeComparison(DateTimeResult that) {
-		if (that.getValue().isDate()) {
-			if (this.getValue().isTime()) {
-				throw new InvalidDateTimeComparison("date","time",ctx.getCurrentAST());
-			} else if (this.getValue().isDateTime()) {
-				throw new InvalidDateTimeComparison("date","datetime",ctx.getCurrentAST());				
-			}
-		} else if (that.getValue().isTime()) {
-			if (this.getValue().isDate()) {
-				throw new InvalidDateTimeComparison("time","date",ctx.getCurrentAST());				
-			} else if (this.getValue().isDateTime()) {
-				throw new InvalidDateTimeComparison("time","datetime",ctx.getCurrentAST());				
-			}
-		} else {
-			if (this.getValue().isDate()) {
-				throw new InvalidDateTimeComparison("datetime","date",ctx.getCurrentAST());
-			} else if (this.getValue().isTime()) {
-				throw new InvalidDateTimeComparison("datetime","time",ctx.getCurrentAST());				
-			}
+	private static String getName(IDateTime val) {
+		if (val.isDate()) {
+			return "date";
 		}
+		if (val.isTime()) {
+			return "time";
+		}
+		return "datetime";
+	}
+
+	private UnsupportedOperation reportInvalidComparison(IDateTime thisValue, IDateTime thatValue) {
+		return new UnsupportedOperation("Cannot compare " + getName(thisValue) + " to " + getName(thatValue), ctx.getCurrentAST());
 	}
 
 	@Override
@@ -311,8 +302,12 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override 
 	protected Result<IBool> greaterThanDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return bool(that.value.getInstant() > this.value.getInstant(), ctx);
+		try {
+			return bool(that.value.compareTo(this.value) > 0, ctx);
+		} 
+		catch (UnsupportedOperationException e) {
+			throw reportInvalidComparison(this.value, that.value);
+		}
 	}
 
 	@Override
@@ -322,8 +317,12 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override
 	protected Result<IBool> greaterThanOrEqualDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return bool(that.value.getInstant() >= this.value.getInstant(), ctx);
+		try {
+			return bool(that.value.compareTo(this.value) >= 0, ctx);
+		} 
+		catch (UnsupportedOperationException e) {
+			throw reportInvalidComparison(this.value, that.value);
+		}
 	}
 
 	@Override
@@ -333,8 +332,12 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override
 	protected Result<IBool> lessThanDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return bool(that.value.getInstant() < this.value.getInstant(), ctx);
+		try {
+			return bool(that.value.compareTo(this.value) < 0, ctx);
+		} 
+		catch (UnsupportedOperationException e) {
+			throw reportInvalidComparison(this.value, that.value);
+		}
 	}
 
 	@Override
@@ -344,8 +347,13 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 
 	@Override
 	protected LessThanOrEqualResult lessThanOrEqualDateTime(DateTimeResult that) {
-		checkDateTimeComparison(that);
-		return new LessThanOrEqualResult(that.value.getInstant() < this.value.getInstant(), that.value.getInstant() == this.value.getInstant(), ctx);
+		try {
+			int result = that.value.compareTo(this.value);
+			return new LessThanOrEqualResult(result < 0, result == 0, ctx);
+		} 
+		catch (UnsupportedOperationException e) {
+			throw reportInvalidComparison(this.value, that.value);
+		}
 	}
 
 	@Override
@@ -356,20 +364,18 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 	@Override
 	protected <U extends IValue> Result<U> subtractDateTime(DateTimeResult that) {
 		IDateTime dStart = this.getValue();
-		Calendar startCal = Calendar.getInstance();
-		startCal.setTimeInMillis(dStart.getInstant());
-
+		Temporal tStart = DateTimeConversions.dateTimeToJava(dStart);
 		IDateTime dEnd = that.getValue();
-		Calendar endCal = Calendar.getInstance();
-		endCal.setTimeInMillis(dEnd.getInstant());
+		Temporal tEnd = DateTimeConversions.dateTimeToJava(dEnd);
 		
 		if (dStart.isDate()) {
 			if (dEnd.isDate()) {
+				Period result = Period.between((LocalDate)tStart, (LocalDate)tEnd);
 				return makeResult(Duration,
 						VF.constructor(DateTimeResult.duration,
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.YEAR)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MONTH)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.DAY_OF_MONTH)),
+							VF.integer(result.getYears()),
+							VF.integer(result.getMonths()),
+							VF.integer(result.getDays()),
 							VF.integer(0), 
 							VF.integer(0), 
 							VF.integer(0),
@@ -382,16 +388,17 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 			}
 		} else if (dStart.isTime()) {
 			if (dEnd.isTime()) {
+				Duration result = java.time.Duration.between(tStart, tEnd);
 				return makeResult(Duration,
 						VF.constructor(DateTimeResult.duration,
 							VF.integer(0),
 							VF.integer(0),
 							VF.integer(0),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.HOUR_OF_DAY)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MINUTE)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.SECOND)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MILLISECOND))),
-						ctx);
+							VF.integer(result.toHours()),
+							VF.integer(result.toMinutes() % 60),
+							VF.integer(result.getSeconds() % 60),
+							VF.integer(result.toMillis() % 1000)
+						), ctx);
 			} else if (dEnd.isDate()) {
 				throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot determine the duration between a time with no date and a date with no time.", ctx.getCurrentAST(), null);	
 			} else {
@@ -401,13 +408,12 @@ public class DateTimeResult extends ElementResult<IDateTime> {
 			if (dEnd.isDateTime()) {
 				return makeResult(Duration,
 						VF.constructor(DateTimeResult.duration,
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.YEAR)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MONTH)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.DAY_OF_MONTH)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.HOUR_OF_DAY)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MINUTE)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.SECOND)),
-							VF.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MILLISECOND))),
+							VF.integer(ChronoUnit.MONTHS.between(tStart, tEnd) % 12),
+							VF.integer(ChronoUnit.DAYS.between(tStart, tEnd) % 31), // TODO is this right?
+							VF.integer(ChronoUnit.HOURS.between(tStart, tEnd) % 24),
+							VF.integer(ChronoUnit.MINUTES.between(tStart, tEnd) % 60),
+							VF.integer(ChronoUnit.SECONDS.between(tStart, tEnd) % 60),
+							VF.integer(ChronoUnit.MILLIS.between(tStart, tEnd) % 1000)),
 						ctx);
 			} else if (dEnd.isDate()) {
 				throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot determine the duration between a datetime and a date with no time.", ctx.getCurrentAST(), null);	

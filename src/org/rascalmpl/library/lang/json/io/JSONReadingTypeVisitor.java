@@ -651,8 +651,8 @@ public class JSONReadingTypeVisitor implements
 		int minuteOfHour = -1;
 		int secondOfMinute = -1;
 		int millisecondsOfSecond = -1;
-		int timezoneOffsetHours = -1;
-		int timezoneOffsetMinutes = -1;
+		int timezoneOffsetHours = -99;
+		int timezoneOffsetMinutes = -99;
 		
 		Map m = (Map)stack.peek();
 		
@@ -675,7 +675,7 @@ public class JSONReadingTypeVisitor implements
 
 		if (year != -1 && monthOfYear != -1 && dayOfMonth != -1 && hourOfDay != -1 
 				&& minuteOfHour != -1 && secondOfMinute != -1 && millisecondsOfSecond != -1
-				&& timezoneOffsetHours != -1 && timezoneOffsetMinutes != -1) {
+				&& timezoneOffsetHours != -99 && timezoneOffsetMinutes != -99) {
 			return vf.datetime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond, timezoneOffsetHours, timezoneOffsetMinutes);
 		}
 		if (year != -1 && monthOfYear != -1 && dayOfMonth != -1 && hourOfDay != -1 

@@ -4,6 +4,7 @@ import String;
 import Node;
 import Type;
 import lang::json::IO;
+import IO;
 import util::UUID;
 
 loc targetFile = |test-temp:///test-<"<uuidi()>">.json|;
@@ -16,6 +17,10 @@ bool jsonFeaturesSupported(value v) {
     }
     for (/node n := v, getAnnotations(n) != ()) {
          // json reader/writer can't handle annotations at the moment
+        return false;
+    }
+    for (/datetime dt := v, !dt.isDateTime) {
+        // json can only deal with full date timestamp
         return false;
     }
     return true;
@@ -66,7 +71,6 @@ data D
     | kwparams(int x = 2, D d = integer(0))
     ;
     
-@ignore{Currently not working with datetimes not as ints}
 test bool jsonStreaming1(D dt) {
     if (!jsonFeaturesSupported(dt)) {
         return true;
@@ -79,6 +83,11 @@ test bool jsonStreaming2(D dt) {
     if (!jsonFeaturesSupported(dt)) {
         return true;
     }
+    dt = visit(dt) {
+        // workaround when we store date times as int, we lose timezone information
+        case datetime d => d[timezoneOffsetHours = 0][timezoneOffsetMinutes=0]
+            when !d.isDate
+    };
     writeJSON(targetFile, dt, dateTimeAsInt=true);
     return readJSON(#D, targetFile) == dt;
 }

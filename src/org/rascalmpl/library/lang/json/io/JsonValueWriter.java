@@ -1,19 +1,31 @@
-/** 
- * Copyright (c) 2016, Jurgen J. Vinju, Centrum Wiskunde & Informatica (CWI) 
- * All rights reserved. 
- *  
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met: 
- *  
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 
- *  
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution. 
- *  
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
- */ 
+/**
+ * Copyright (c) 2016, Jurgen J. Vinju, Centrum Wiskunde & Informatica (CWI) All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
+ * provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+ * and the following disclaimer.
+ * 
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of
+ * conditions and the following disclaimer in the documentation and/or other materials provided with
+ * the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
+ * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.rascalmpl.library.lang.json.io;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
 import java.util.Map.Entry;
 
 import io.usethesource.vallang.IBool;
@@ -35,31 +47,27 @@ import io.usethesource.vallang.visitors.IValueVisitor;
 
 import com.google.gson.stream.JsonWriter;
 
+import org.rascalmpl.util.DateTimeConversions;
+
 /**
  * This class streams am IValue stream directly to an JSon stream. Useful to communicate IValues to browsers.
  */
 public class JsonValueWriter {
-  private ThreadLocal<SimpleDateFormat> format;
+  private DateTimeFormatter format;
   private boolean constructorsAsObjects = true;
   private boolean nodesAsObjects = true;
   private boolean datesAsInts = true;
   private boolean unpackedLocations = false;
   
   public JsonValueWriter() {
-    setCalendarFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+    setCalendarFormat("yyyy-MM-dd'T'HH:mm:ssZ");
   }
   
   /**
    * Builder method to set the format to use for all date-time values encoded as strings
    */
   public JsonValueWriter setCalendarFormat(String format) {
-    // SimpleDateFormat is not thread safe, so here we make sure
-    // we can use objects of this reader in different threads at the same time
-    this.format = new ThreadLocal<SimpleDateFormat>() {
-      protected SimpleDateFormat initialValue() {
-        return new SimpleDateFormat(format);
-      }
-    };
+    this.format = DateTimeFormatter.ofPattern(format);
     return this;
   }
   
@@ -354,7 +362,8 @@ public class JsonValueWriter {
           return null;
         }
         else {
-          throw new IOException("Dates as strings not yet implemented: " + format.get().toPattern());
+          out.value(format.format(DateTimeConversions.dateTimeToJava(o)));
+          return null;
         }
       }
     });

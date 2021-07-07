@@ -1,16 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2009-2013 CWI
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2009-2013 CWI All rights reserved. This program and the accompanying materials are
+ * made available under the terms of the Eclipse Public License v1.0 which accompanies this
+ * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
-
- *   * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI
- *   * Mark Hills - Mark.Hills@cwi.nl (CWI)
- *   * Arnold Lankamp - Arnold.Lankamp@cwi.nl
- *   * Bert Lisser    - Bert.Lisser@cwi.nl
+ * 
+ * * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI * Mark Hills - Mark.Hills@cwi.nl (CWI) * Arnold
+ * Lankamp - Arnold.Lankamp@cwi.nl * Bert Lisser - Bert.Lisser@cwi.nl
  *******************************************************************************/
 package org.rascalmpl.library.lang.json;
 
@@ -19,6 +15,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
 
 import org.rascalmpl.exceptions.RuntimeExceptionFactory;
 import org.rascalmpl.library.lang.json.io.IValueAdapter;
@@ -43,7 +40,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.ibm.icu.text.DateFormat;
 
 public class IO {
 	private final IValueFactory values;
@@ -155,7 +151,7 @@ public class IO {
 	        throw RuntimeExceptionFactory.io(values.string(e.getMessage()), null, null);
 	    } 
 	}
-	
+
 	public IString asJSON(IValue value, IBool implicitConstructors, IBool implicitNodes, IBool unpackedLocations, IString dateTimeFormat, IBool dateTimeAsInt, IInteger indent) {
 	    StringWriter string = new StringWriter();
 

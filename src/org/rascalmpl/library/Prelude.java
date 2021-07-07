@@ -1,18 +1,13 @@
 /*******************************************************************************
-/*******************************************************************************
- * Copyright (c) 2009-2020 CWI, NWO-I CWI
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * /******************************************************************************* Copyright (c)
+ * 2009-2020 CWI, NWO-I CWI All rights reserved. This program and the accompanying materials are
+ * made available under the terms of the Eclipse Public License v1.0 which accompanies this
+ * distribution, and is available at http://www.eclipse.org/legal/epl-v10.html
  *
- * Contributors:
- *   * Paul Klint - Paul.Klint@cwi.nl - CWI
- *   * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl - CWI
- *   * Arnold Lankamp - Arnold.Lankamp@cwi.nl
- *   * Davy Landman - Davy.Landman@cwi.nl
- *   * Michael Steindorfer - Michael.Steindorfer@cwi.nl - CWI
-*******************************************************************************/
+ * Contributors: * Paul Klint - Paul.Klint@cwi.nl - CWI * Jurgen J. Vinju - Jurgen.Vinju@cwi.nl -
+ * CWI * Arnold Lankamp - Arnold.Lankamp@cwi.nl * Davy Landman - Davy.Landman@cwi.nl * Michael
+ * Steindorfer - Michael.Steindorfer@cwi.nl - CWI
+ *******************************************************************************/
 
 package org.rascalmpl.library;
 
@@ -46,6 +41,19 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -64,10 +72,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import com.ibm.icu.text.SimpleDateFormat;
-import com.ibm.icu.util.Calendar;
-import com.ibm.icu.util.TimeZone;
-import com.ibm.icu.util.ULocale;
 
 import org.apache.commons.lang.CharSetUtils;
 import org.rascalmpl.exceptions.RuntimeExceptionFactory;
@@ -85,6 +89,7 @@ import org.rascalmpl.uri.LogicalMapResolver;
 import org.rascalmpl.uri.URIResolverRegistry;
 import org.rascalmpl.uri.URIUtil;
 import org.rascalmpl.uri.UnsupportedSchemeException;
+import org.rascalmpl.util.DateTimeConversions;
 import org.rascalmpl.values.IRascalValueFactory;
 import org.rascalmpl.values.RascalValueFactory;
 import org.rascalmpl.values.functions.IFunction;
@@ -126,14 +131,14 @@ public class Prelude {
 	protected final IValueFactory values;
 	protected final IRascalValueFactory rascalValues;
 	private final Random random;
-	
+
 	private final boolean trackIO = System.getenv("TRACKIO") != null;
-    private final PrintWriter out;
+	private final PrintWriter out;
 	private final TypeStore store;
-	
+
 	public Prelude(IValueFactory values, IRascalValueFactory rascalValues, PrintWriter out, TypeStore store) {
 		super();
-		
+
 		this.values = values;
 		this.rascalValues = rascalValues;
 		this.store = store;
@@ -142,644 +147,435 @@ public class Prelude {
 		random = new Random();
 	}
 
-    private IValue createRandomValue(Type t, int depth, int width) {
-        return t.randomValue(random, values, new TypeStore(), Collections.emptyMap(), depth, width);
-    }
+	private IValue createRandomValue(Type t, int depth, int width) {
+		return t.randomValue(random, values, new TypeStore(), Collections.emptyMap(), depth, width);
+	}
 
-	
+
 	/*
 	 * Boolean
 	 */
-	
-	
-	public IValue arbBool()  // get an arbitrary boolean value.}
+
+
+	public IValue arbBool() // get an arbitrary boolean value.}
 	{
-	  return values.bool(random.nextInt(2) == 1);
+		return values.bool(random.nextInt(2) == 1);
 	}
-	
+
 	/*
 	 * DateTime
 	 */
 	public IValue now()
-	//@doc{Get the current datetime.}
+	// @doc{Get the current datetime.}
 	{
-	   return values.datetime(Calendar.getInstance().getTimeInMillis());
+		return values.datetime(Instant.now().toEpochMilli());
 	}
 
-	public IValue createDate(IInteger year, IInteger month, IInteger day) 
-	//@doc{Create a new date.}
+	public IValue createDate(IInteger year, IInteger month, IInteger day)
+	// @doc{Create a new date.}
 	{
 		return values.date(year.intValue(), month.intValue(), day.intValue());
 	}
-	
-	public IValue createTime(IInteger hour, IInteger minute, IInteger second,
-			IInteger millisecond)
-	//@doc{Create a new time.}
+
+	public IValue createTime(IInteger hour, IInteger minute, IInteger second, IInteger millisecond)
+	// @doc{Create a new time.}
 	{
 		return values.time(hour.intValue(), minute.intValue(), second.intValue(), millisecond.intValue());
 	}
 
-	public IValue createTime(IInteger hour, IInteger minute, IInteger second,
-			IInteger millisecond, IInteger timezoneHourOffset, IInteger timezoneMinuteOffset)
-	//@doc{Create a new time with the given numeric timezone offset.}
+	public IValue createTime(IInteger hour, IInteger minute, IInteger second, IInteger millisecond,
+		IInteger timezoneHourOffset, IInteger timezoneMinuteOffset)
+	// @doc{Create a new time with the given numeric timezone offset.}
 	{
-		return values.time(hour.intValue(), minute.intValue(), second.intValue(),
-				millisecond.intValue(), timezoneHourOffset.intValue(), timezoneMinuteOffset.intValue());
-	}
-	
-	public IValue createDateTime(IInteger year, IInteger month, IInteger day, 
-			IInteger hour, IInteger minute, IInteger second, IInteger millisecond)
-	//@doc{Create a new datetime.}
-	{
-		return values.datetime(year.intValue(), month.intValue(), day.intValue(), hour.intValue(),
-				minute.intValue(), second.intValue(), millisecond.intValue());
+		return values.time(hour.intValue(), minute.intValue(), second.intValue(), millisecond.intValue(),
+			timezoneHourOffset.intValue(), timezoneMinuteOffset.intValue());
 	}
 
-	public IValue createDateTime(IInteger year, IInteger month, IInteger day,
-			IInteger hour, IInteger minute, IInteger second, IInteger millisecond, 
-			IInteger timezoneHourOffset, IInteger timezoneMinuteOffset)
-	//@doc{Create a new datetime with the given numeric timezone offset.}
+	public IValue createDateTime(IInteger year, IInteger month, IInteger day, IInteger hour, IInteger minute,
+		IInteger second, IInteger millisecond)
+	// @doc{Create a new datetime.}
 	{
-		return values.datetime(year.intValue(), month.intValue(), day.intValue(), hour.intValue(),
-				minute.intValue(), second.intValue(), millisecond.intValue(), timezoneHourOffset.intValue(),
-				timezoneMinuteOffset.intValue());
+		return values.datetime(year.intValue(), month.intValue(), day.intValue(), hour.intValue(), minute.intValue(),
+			second.intValue(), millisecond.intValue());
 	}
-		
-	
+
+	public IValue createDateTime(IInteger year, IInteger month, IInteger day, IInteger hour, IInteger minute,
+		IInteger second, IInteger millisecond, IInteger timezoneHourOffset, IInteger timezoneMinuteOffset)
+	// @doc{Create a new datetime with the given numeric timezone offset.}
+	{
+		return values.datetime(year.intValue(), month.intValue(), day.intValue(), hour.intValue(), minute.intValue(),
+			second.intValue(), millisecond.intValue(), timezoneHourOffset.intValue(), timezoneMinuteOffset.intValue());
+	}
+
+
 	public IDateTime arbDateTime() {
-	    return (IDateTime) createRandomValue(TypeFactory.getInstance().dateTimeType(), 5, 5);
+		return (IDateTime) createRandomValue(TypeFactory.getInstance().dateTimeType(), 5, 5);
 	}
+
 	public IValue joinDateAndTime(IDateTime date, IDateTime time)
-	//@doc{Create a new datetime by combining a date and a time.}
+	// @doc{Create a new datetime by combining a date and a time.}
 	{
-		return values.datetime(date.getYear(), date.getMonthOfYear(), date.getDayOfMonth(),
-				time.getHourOfDay(), time.getMinuteOfHour(), time.getSecondOfMinute(),
-				time.getMillisecondsOfSecond(), time.getTimezoneOffsetHours(), time.getTimezoneOffsetMinutes());
+		return values.datetime(date.getYear(), date.getMonthOfYear(), date.getDayOfMonth(), time.getHourOfDay(),
+			time.getMinuteOfHour(), time.getSecondOfMinute(), time.getMillisecondsOfSecond(),
+			time.getTimezoneOffsetHours(), time.getTimezoneOffsetMinutes());
 	}
 
 	public IValue splitDateTime(IDateTime dt)
-	//@doc{Split an existing datetime into a tuple with the date and the time.}
+	// @doc{Split an existing datetime into a tuple with the date and the time.}
 	{
 		return values.tuple(values.date(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth()),
-				values.time(dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
-						dt.getMillisecondsOfSecond(), dt.getTimezoneOffsetHours(), dt.getTimezoneOffsetMinutes()));
+			values.time(dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(), dt.getMillisecondsOfSecond(),
+				dt.getTimezoneOffsetHours(), dt.getTimezoneOffsetMinutes()));
 	}
-	
-	
+
+
 	public IValue incrementYears(IDateTime dt, IInteger n)
-	//@doc{Increment the years by a given amount.}
+	// @doc{Increment the years by a given amount.}
 	{
-		return incrementDate(dt, Calendar.YEAR, "years", n);	
+		return incrementDate(dt, ChronoUnit.YEARS, "years", n);
 	}
-	
+
 	public IValue incrementMonths(IDateTime dt, IInteger n)
-	//@doc{Increment the months by a given amount.}
+	// @doc{Increment the months by a given amount.}
 	{
-		return incrementDate(dt, Calendar.MONTH, "months", n);	
+		return incrementDate(dt, ChronoUnit.MONTHS, "months", n);
 	}
 
 	public IValue incrementDays(IDateTime dt, IInteger n)
-	//@doc{Increment the days by a given amount.}
+	// @doc{Increment the days by a given amount.}
 	{
-		return incrementDate(dt, Calendar.DAY_OF_MONTH, "days", n);	
+		return incrementDate(dt, ChronoUnit.DAYS, "days", n);
 	}
 
-	private String getTZString(int hourOffset, int minuteOffset) {
-		String tzString = "GMT" + 
-			((hourOffset < 0 || (0 == hourOffset && minuteOffset < 0)) ? "-" : "+") + 
-			String.format("%02d",hourOffset >= 0 ? hourOffset : hourOffset * -1) +
-			String.format("%02d",minuteOffset >= 0 ? minuteOffset : minuteOffset * -1);
-		return tzString;
-	}
 
-	private final int millisInAMinute = 1000 * 60;
-	private final int millisInAnHour = millisInAMinute * 60;
+	private IValue incrementDTField(IDateTime dt, ChronoUnit field, IInteger amount) {
+		Temporal actualDt = DateTimeConversions.dateTimeToJava(dt);
+		Temporal result = actualDt.plus(amount.longValue(), field);
 
-	private IValue incrementDTField(IDateTime dt, int field, IInteger amount) {
-		Calendar cal = null;
-
-		cal = dateTimeToCalendar(dt);
-		
-		// Make sure lenient is true, since this allows wrapping of fields. For
-		// instance, if you have $2012-05-15, and subtract 15 months, this is
-		// an error if lenient is false, but gives $2012-02-15 (as expected)
-		// if lenient is true.
-		cal.setLenient(true);
-
-		cal.add(field, amount.intValue());
-
-		// Turn the calendar back into a date, time, or datetime value
 		if (dt.isDate()) {
-			return calendarToDate(cal);
-		} else {
-			if (dt.isTime()) {
-				return calendarToTime(cal);
-			} else {
-				return calendarToDateTime(cal);
-			}
+			return temporalToDate(result);
 		}
+		else if (dt.isTime()) {
+			return temporalToTime(result);
+		}
+		return temporalToDateTime((OffsetDateTime) result);
+	}
+	private IDateTime temporalToDate(TemporalAccessor t) {
+		return DateTimeConversions.temporalToDate(values, (LocalDate)t);
 	}
 
-	private IValue calendarToDateTime(Calendar cal) {
-		int timezoneHours = cal.get(Calendar.ZONE_OFFSET) / millisInAnHour;
-		int timezoneMinutes = cal.get(Calendar.ZONE_OFFSET) % millisInAnHour / millisInAMinute;
-		return createDateTime(values.integer(cal.get(Calendar.YEAR)),
-				values.integer(cal.get(Calendar.MONTH)+1),
-				values.integer(cal.get(Calendar.DAY_OF_MONTH)),
-				values.integer(cal.get(Calendar.HOUR_OF_DAY)),
-				values.integer(cal.get(Calendar.MINUTE)),
-				values.integer(cal.get(Calendar.SECOND)),
-				values.integer(cal.get(Calendar.MILLISECOND)),
-				values.integer(timezoneHours),
-				values.integer(timezoneMinutes));
+
+	private IDateTime temporalToTime(TemporalAccessor t) {
+		if (t instanceof OffsetTime) {
+			return DateTimeConversions.temporalToTime(values, (OffsetTime)t);
+		}
+		return DateTimeConversions.temporalToTime(values, (LocalTime)t);
 	}
 
-	private IValue calendarToTime(Calendar cal) {
-		int timezoneHours = cal.get(Calendar.ZONE_OFFSET) / millisInAnHour;
-		int timezoneMinutes = cal.get(Calendar.ZONE_OFFSET) % millisInAnHour / millisInAMinute;
-		return createTime(values.integer(cal.get(Calendar.HOUR_OF_DAY)),
-				values.integer(cal.get(Calendar.MINUTE)),
-				values.integer(cal.get(Calendar.SECOND)),
-				values.integer(cal.get(Calendar.MILLISECOND)),
-				values.integer(timezoneHours),
-				values.integer(timezoneMinutes));
+
+	private IDateTime temporalToDateTime(OffsetDateTime t) {
+		return DateTimeConversions.temporalToDateTime(values, t);
 	}
 
-	private IValue calendarToDate(Calendar cal) {
-		return createDate(values.integer(cal.get(Calendar.YEAR)),
-				values.integer(cal.get(Calendar.MONTH)+1),
-				values.integer(cal.get(Calendar.DAY_OF_MONTH)));
-	}
-
-	private Calendar dateTimeToCalendar(IDateTime dt) {
-	    TimeZone tz = dt.isDate() ? 
-	        TimeZone.getDefault() : 
-	          TimeZone.getTimeZone(getTZString(dt.getTimezoneOffsetHours(), dt.getTimezoneOffsetMinutes()));
-  
-		Calendar cal = Calendar.getInstance(tz,Locale.getDefault());
-		cal.setTimeInMillis(dt.getInstant());
-			
-		return cal;
-	}
-	
-	private IValue incrementTime(IDateTime dt, int field, String fieldName, IInteger amount) {
+	private IValue incrementTime(IDateTime dt, ChronoUnit field, String fieldName, IInteger amount) {
 		if (dt.isDate())
-			throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot increment the " + fieldName + " on a date value.");
-		
+			throw RuntimeExceptionFactory
+				.invalidUseOfDateException("Cannot increment the " + fieldName + " on a date value.");
+
 		return incrementDTField(dt, field, amount);
 	}
 
-	private IValue incrementDate(IDateTime dt, int field, String fieldName, IInteger amount) {
+	private IValue incrementDate(IDateTime dt, ChronoUnit field, String fieldName, IInteger amount) {
 		if (dt.isTime())
-			throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot increment the " + fieldName + " on a time value.");
-		
+			throw RuntimeExceptionFactory
+				.invalidUseOfDateException("Cannot increment the " + fieldName + " on a time value.");
+
 		return incrementDTField(dt, field, amount);
 	}
-	
+
 	public IValue incrementHours(IDateTime dt, IInteger n)
-	//@doc{Increment the hours by a given amount.}
+	// @doc{Increment the hours by a given amount.}
 	{
-		return incrementTime(dt, Calendar.HOUR_OF_DAY, "hours", n);
-	}		
+		return incrementTime(dt, ChronoUnit.HOURS, "hours", n);
+	}
 
 	public IValue incrementMinutes(IDateTime dt, IInteger n)
-	//@doc{Increment the minutes by a given amount.}
+	// @doc{Increment the minutes by a given amount.}
 	{
-		return incrementTime(dt, Calendar.MINUTE, "minutes", n);
-	}		
-	
-	public IValue incrementSeconds(IDateTime dt, IInteger n)
-	//@doc{Increment the seconds by a given amount.}
-	{
-		return incrementTime(dt, Calendar.SECOND, "seconds", n);
+		return incrementTime(dt, ChronoUnit.MINUTES, "minutes", n);
 	}
-	
-	public IValue incrementMilliseconds(IDateTime dt, IInteger n)
-	//@doc{Increment the milliseconds by a given amount.}
+
+	public IValue incrementSeconds(IDateTime dt, IInteger n)
+	// @doc{Increment the seconds by a given amount.}
 	{
-		return incrementTime(dt, Calendar.MILLISECOND, "milliseconds", n);
+		return incrementTime(dt, ChronoUnit.SECONDS, "seconds", n);
+	}
+
+	public IValue incrementMilliseconds(IDateTime dt, IInteger n)
+	// @doc{Increment the milliseconds by a given amount.}
+	{
+		return incrementTime(dt, ChronoUnit.MILLIS, "milliseconds", n);
 	}
 
 	public IValue decrementYears(IDateTime dt, IInteger n)
-	//@doc{Decrement the years by a given amount.}
+	// @doc{Decrement the years by a given amount.}
 	{
-		return incrementDate(dt, Calendar.YEAR, "years", n.negate());
-	}		
+		return incrementDate(dt, ChronoUnit.YEARS, "years", n.negate());
+	}
 
 	public IValue decrementMonths(IDateTime dt, IInteger n)
-	//@doc{Decrement the months by a given amount.}
+	// @doc{Decrement the months by a given amount.}
 	{
-		return incrementDate(dt, Calendar.MONTH, "months", n.negate());	}	
+		return incrementDate(dt, ChronoUnit.MONTHS, "months", n.negate());
+	}
 
 	public IValue decrementDays(IDateTime dt, IInteger n)
-	//@doc{Decrement the days by a given amount.}
+	// @doc{Decrement the days by a given amount.}
 	{
-		return incrementDate(dt, Calendar.DAY_OF_MONTH, "days", n.negate());
+		return incrementDate(dt, ChronoUnit.DAYS, "days", n.negate());
 	}
 
 	public IValue decrementHours(IDateTime dt, IInteger n)
-	//@doc{Decrement the hours by a given amount.}
+	// @doc{Decrement the hours by a given amount.}
 	{
-		return incrementTime(dt, Calendar.HOUR_OF_DAY, "hours", n.negate());
-	}		
+		return incrementTime(dt, ChronoUnit.HOURS, "hours", n.negate());
+	}
 
 	public IValue decrementMinutes(IDateTime dt, IInteger n)
-	//@doc{Decrement the minutes by a given amount.}
+	// @doc{Decrement the minutes by a given amount.}
 	{
-		return incrementTime(dt, Calendar.MINUTE, "minutes", n.negate());
-	}		
+		return incrementTime(dt, ChronoUnit.MINUTES, "minutes", n.negate());
+	}
 
 	public IValue decrementSeconds(IDateTime dt, IInteger n)
-	//@doc{Decrement the seconds by a given amount.}
+	// @doc{Decrement the seconds by a given amount.}
 	{
-		return incrementTime(dt, Calendar.SECOND, "seconds", n.negate());	
-	}		
+		return incrementTime(dt, ChronoUnit.SECONDS, "seconds", n.negate());
+	}
 
 	public IValue decrementMilliseconds(IDateTime dt, IInteger n)
-	//@doc{Decrement the milliseconds by a given amount.}
+	// @doc{Decrement the milliseconds by a given amount.}
 	{
-		return incrementTime(dt, Calendar.MILLISECOND, "milliseconds", n.negate());
-	}		
+		return incrementTime(dt, ChronoUnit.MILLIS, "milliseconds", n.negate());
+	}
 
 	public IValue createDurationInternal(IDateTime dStart, IDateTime dEnd) {
 		// dStart and dEnd both have to be dates, times, or datetimes
-		Calendar startCal = Calendar.getInstance();
-		startCal.setTimeInMillis(dStart.getInstant());
-		Calendar endCal = Calendar.getInstance();
-		endCal.setTimeInMillis(dEnd.getInstant());
-		
-		IValue duration = null;
-		if (dStart.isDate()) {
-			if (dEnd.isDate()) {
-				duration = values.tuple(
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.YEAR)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MONTH)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.DAY_OF_MONTH)),
-						values.integer(0), values.integer(0), values.integer(0),
-						values.integer(0));
-			} else if (dEnd.isTime()) {
-				throw RuntimeExceptionFactory.invalidUseOfTimeException("Cannot determine the duration between a date with no time and a time with no date.");	
-			} else {
-				throw RuntimeExceptionFactory.invalidUseOfDateTimeException("Cannot determine the duration between a date with no time and a datetime.");					
+		Temporal startTemp = DateTimeConversions.dateTimeToJava(dStart);
+		Temporal endTemp = DateTimeConversions.dateTimeToJava(dEnd);
+
+		if (startTemp instanceof LocalDate) {
+			if (endTemp instanceof LocalDate) {
+				Period duration = Period.between((LocalDate) startTemp, (LocalDate) endTemp).normalized();
+
+				return values.tuple(values.integer(duration.getYears()), values.integer(duration.getMonths()),
+					values.integer(duration.getDays()), values.integer(0), values.integer(0), values.integer(0),
+					values.integer(0));
 			}
-		} else if (dStart.isTime()) {
-			if (dEnd.isTime()) {
-				duration = values.tuple(
-						values.integer(0),
-						values.integer(0),
-						values.integer(0),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.HOUR_OF_DAY)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MINUTE)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.SECOND)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MILLISECOND)));
-			} else if (dEnd.isDate()) {
-				throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot determine the duration between a time with no date and a date with no time.");	
-			} else {
-				throw RuntimeExceptionFactory.invalidUseOfDateTimeException("Cannot determine the duration between a time with no date and a datetime.");					
+			else if (endTemp instanceof OffsetTime) {
+				throw RuntimeExceptionFactory.invalidUseOfTimeException(
+					"Cannot determine the duration between a date with no time and a time with no date.");
 			}
-		} else {
+			else {
+				throw RuntimeExceptionFactory.invalidUseOfDateTimeException(
+					"Cannot determine the duration between a date with no time and a datetime.");
+			}
+		}
+		else if (startTemp instanceof OffsetTime) {
+			if (endTemp instanceof OffsetTime) {
+				Duration duration = Duration.between(startTemp, endTemp);
+				return values.tuple(values.integer(0), values.integer(0), values.integer(0),
+					values.integer(duration.toHours()), values.integer(duration.toMinutes() % 60),
+					values.integer(duration.getSeconds() % 60), values.integer(duration.toMillis() % 1000));
+			}
+			else if (dEnd.isDate()) {
+				throw RuntimeExceptionFactory.invalidUseOfDateException(
+					"Cannot determine the duration between a time with no date and a date with no time.");
+			}
+			else {
+				throw RuntimeExceptionFactory.invalidUseOfDateTimeException(
+					"Cannot determine the duration between a time with no date and a datetime.");
+			}
+		}
+		else {
 			if (dEnd.isDateTime()) {
-				duration = values.tuple(
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.YEAR)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MONTH)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.DAY_OF_MONTH)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.HOUR_OF_DAY)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MINUTE)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.SECOND)),
-						values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.MILLISECOND)));
-			} else if (dEnd.isDate()) {
-				throw RuntimeExceptionFactory.invalidUseOfDateException("Cannot determine the duration between a datetime and a date with no time.");	
-			} else {
-				throw RuntimeExceptionFactory.invalidUseOfTimeException("Cannot determine the duration between a datetime and a time with no date.");					
+				return values.tuple(values.integer(ChronoUnit.YEARS.between(startTemp, endTemp)),
+					values.integer(ChronoUnit.MONTHS.between(startTemp, endTemp) % 12),
+					values.integer(ChronoUnit.DAYS.between(startTemp, endTemp) % 31), // TODO: this is broken, day of
+																						// month in durations ??
+					values.integer(ChronoUnit.HOURS.between(startTemp, endTemp) % 24),
+					values.integer(ChronoUnit.MINUTES.between(startTemp, endTemp) % 60),
+					values.integer(ChronoUnit.SECONDS.between(startTemp, endTemp) % 60),
+					values.integer(ChronoUnit.MILLIS.between(startTemp, endTemp) % 1000));
 			}
-		}
-		return duration;
-	}
-	
-	public IValue parseDate(IString inputDate, IString formatString)
-	//@doc{Parse an input date given as a string using the given format string}
-	{	
-		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue());
-			fmt.parse(inputDate.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			return values.date(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputDate.getValue() + 
-					" using format string: " + formatString.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputDate.getValue() + 
-					" using format string: " + formatString.getValue());
-		}
-	}
-	
-	public IValue parseDateInLocale(IString inputDate, IString formatString, IString locale) 
-	//@doc{Parse an input date given as a string using a specific locale and format string}
-	{
-		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue(), new Locale(locale.getValue()));
-			fmt.parse(inputDate.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			return values.date(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputDate.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputDate.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
+			else if (dEnd.isDate()) {
+				throw RuntimeExceptionFactory.invalidUseOfDateException(
+					"Cannot determine the duration between a datetime and a date with no time.");
+			}
+			else {
+				throw RuntimeExceptionFactory.invalidUseOfTimeException(
+					"Cannot determine the duration between a datetime and a time with no date.");
+			}
 		}
 	}
 
-	public IValue parseTime(IString inputTime, IString formatString) 
-	//@doc{Parse an input time given as a string using the given format string}
+	public IValue parseDate(IString inputDate, IString formatString)
+	// @doc{Parse an input date given as a string using the given format string}
 	{
-		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue());
-			fmt.parse(inputTime.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			// The value for zone offset comes back in milliseconds. The number of
-			// hours is thus milliseconds / 1000 (to get to seconds) / 60 (to get to minutes)
-			// / 60 (to get to hours). Minutes is this except for the last division,
-			// but then we use mod 60 since this gives us total # of minutes, including
-			// the hours we have already computed.
-			int zoneHours = cal.get(Calendar.ZONE_OFFSET) / (1000 * 60 * 60);
-			int zoneMinutes = (cal.get(Calendar.ZONE_OFFSET) / (1000 * 60)) % 60; 
-			return values.time(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND), cal.get(Calendar.MILLISECOND), zoneHours, zoneMinutes);
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputTime.getValue() + 
-					" using format string: " + formatString.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input date: " + inputTime.getValue() + 
-					" using format string: " + formatString.getValue());
-		}
+		return parseDateTime(values, inputDate, prepareFormatter(formatString));
 	}
-	
-	public IValue parseTimeInLocale(IString inputTime, IString formatString, IString locale) 
-	//@doc{Parse an input time given as a string using a specific locale and format string}
+
+	public IValue parseDateInLocale(IString inputDate, IString formatString, IString locale)
+	// @doc{Parse an input date given as a string using a specific locale and format string}
 	{
-		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue(), new Locale(locale.getValue()));
-			fmt.parse(inputTime.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			// The value for zone offset comes back in milliseconds. The number of
-			// hours is thus milliseconds / 1000 (to get to seconds) / 60 (to get to minutes)
-			// / 60 (to get to hours). Minutes is this except for the last division,
-			// but then we use mod 60 since this gives us total # of minutes, including
-			// the hours we have already computed.
-			int zoneHours = cal.get(Calendar.ZONE_OFFSET) / (1000 * 60 * 60);
-			int zoneMinutes = (cal.get(Calendar.ZONE_OFFSET) / (1000 * 60)) % 60; 
-			return values.time(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND), cal.get(Calendar.MILLISECOND), zoneHours, zoneMinutes);
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input time: " + inputTime.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input time: " + inputTime.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
-		}
+		return parseDateTime(values, inputDate, prepareFormatterLocale(formatString, locale));
+	}
+
+	public IValue parseTime(IString inputTime, IString formatString)
+	// @doc{Parse an input time given as a string using the given format string}
+	{
+		return parseDateTime(values, inputTime, prepareFormatter(formatString));
+	}
+
+	public IValue parseTimeInLocale(IString inputTime, IString formatString, IString locale)
+	// @doc{Parse an input time given as a string using a specific locale and format string}
+	{
+		return parseDateTime(values, inputTime, prepareFormatterLocale(formatString, locale));
 	}
 
 	public IString printSymbol(IConstructor symbol, IBool withLayout) {
-	  return values.string(SymbolAdapter.toString(symbol, withLayout.getValue()));
+		return values.string(SymbolAdapter.toString(symbol, withLayout.getValue()));
 	}
-	
+
 	public IValue parseDateTime(IString inputDateTime, IString formatString) {
-	    return parseDateTime(values, inputDateTime, formatString);
+		return parseDateTime(values, inputDateTime, formatString);
 	}
-	
-	static public IValue parseDateTime(IValueFactory values, IString inputDateTime, IString formatString) 
-	//@doc{Parse an input datetime given as a string using the given format string}
+
+	static public IValue parseDateTime(IValueFactory values, IString inputDateTime, IString formatString)
+	// @doc{Parse an input datetime given as a string using the given format string}
 	{
-		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue());
-			fmt.setLenient(false);
-			fmt.parse(inputDateTime.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			int zoneHours = cal.get(Calendar.ZONE_OFFSET) / (1000 * 60 * 60);
-			int zoneMinutes = (cal.get(Calendar.ZONE_OFFSET) / (1000 * 60)) % 60; 
-			return values.datetime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND), cal.get(Calendar.MILLISECOND), zoneHours, zoneMinutes);
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input datetime: " + inputDateTime.getValue() + 
-					" using format string: " + formatString.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input datetime: " + inputDateTime.getValue() + 
-					" using format string: " + formatString.getValue());
-		}			
+		return parseDateTime(values, inputDateTime, prepareFormatter(formatString));
 	}
 	
 	public IValue parseDateTimeInLocale(IString inputDateTime, IString formatString, IString locale) 
 	//@doc{Parse an input datetime given as a string using a specific locale and format string}
 	{
+		return parseDateTime(values, inputDateTime, prepareFormatterLocale(formatString, locale));
+	}
+
+	private static IValue parseDateTime(IValueFactory values, IString input, DateTimeFormatter format) {
 		try {
-			java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat(formatString.getValue(), new Locale(locale.getValue()));
-			fmt.parse(inputDateTime.getValue());
-			java.util.Calendar cal = fmt.getCalendar();
-			int zoneHours = cal.get(Calendar.ZONE_OFFSET) / (1000 * 60 * 60);
-			int zoneMinutes = (cal.get(Calendar.ZONE_OFFSET) / (1000 * 60)) % 60; 
-			return values.datetime(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND), cal.get(Calendar.MILLISECOND), zoneHours, zoneMinutes);
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input datetime: " + inputDateTime.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
-		} catch (ParseException e) {
-			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input datetime: " + inputDateTime.getValue() + 
-					" using format string: " + formatString.getValue() + " in locale: " + locale.getValue());
+			return DateTimeConversions.temporalToIValue(values, format.parse(input.getValue()));
+		} catch (IllegalArgumentException | DateTimeParseException e) {
+			throw RuntimeExceptionFactory.dateTimeParsingError("Cannot parse input: " + input.getValue() + " with formatter: " + format + " error: " + e.getMessage());
 		}
+
 	}
 
-	private Calendar getCalendarForDate(IDateTime inputDate) {
-		if (inputDate.isDate() || inputDate.isDateTime()) {
-			Calendar cal = Calendar.getInstance(TimeZone.getDefault(),Locale.getDefault());
-			cal.setLenient(false);
-			cal.set(inputDate.getYear(), inputDate.getMonthOfYear()-1, inputDate.getDayOfMonth());
-			return cal;
-		} else {
-			throw new IllegalArgumentException("Cannot get date for a datetime that only represents the time");
-		}
-	}
-	
-	private Calendar getCalendarForTime(IDateTime inputTime) {
-		if (inputTime.isTime() || inputTime.isDateTime()) {
-			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(getTZString(inputTime.getTimezoneOffsetHours(),inputTime.getTimezoneOffsetMinutes())),Locale.getDefault());
-			cal.setLenient(false);
-			cal.set(Calendar.HOUR_OF_DAY, inputTime.getHourOfDay());
-			cal.set(Calendar.MINUTE, inputTime.getMinuteOfHour());
-			cal.set(Calendar.SECOND, inputTime.getSecondOfMinute());
-			cal.set(Calendar.MILLISECOND, inputTime.getMillisecondsOfSecond());
-			return cal;
-		} else {
-			throw new IllegalArgumentException("Cannot get time for a datetime that only represents the date");
-		}
-	}
-
-	private Calendar getCalendarForDateTime(IDateTime inputDateTime) {
-		if (inputDateTime.isDateTime()) {
-			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(getTZString(inputDateTime.getTimezoneOffsetHours(),inputDateTime.getTimezoneOffsetMinutes())),Locale.getDefault());
-			cal.setLenient(false);
-			cal.set(inputDateTime.getYear(), inputDateTime.getMonthOfYear()-1, inputDateTime.getDayOfMonth(), inputDateTime.getHourOfDay(), inputDateTime.getMinuteOfHour(), inputDateTime.getSecondOfMinute());
-			cal.set(Calendar.MILLISECOND, inputDateTime.getMillisecondsOfSecond());
-			return cal;
-		} else {
-			throw new IllegalArgumentException("Cannot get date and time for a datetime that only represents the date or the time");
-		}
-	}
 
 	public IValue printDate(IDateTime inputDate, IString formatString) 
 	//@doc{Print an input date using the given format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue()); 
-			Calendar cal = getCalendarForDate(inputDate);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print date " + inputDate + " with format " + formatString.getValue());
-		}
+		return printDateTime(inputDate, prepareFormatter(formatString));
 	}
 
 	public IValue printDate(IDateTime inputDate) 
 	//@doc{Print an input date using a default format string}
 	{
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd"); 
-		Calendar cal = getCalendarForDate(inputDate);
-		sd.setCalendar(cal);
-		return values.string(sd.format(cal.getTime()));
+		return printDate(inputDate, values.string("yyyy-MM-dd"));
 	}
 	
 	public IValue printDateInLocale(IDateTime inputDate, IString formatString, IString locale) 
 	//@doc{Print an input date using a specific locale and format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue(),new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForDate(inputDate);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print date " + inputDate + " with format " + formatString.getValue() + ", in locale: " + locale.getValue());
-		}
+		return printDateTime(inputDate, prepareFormatterLocale(formatString, locale));
 	}
 
 	public IValue printDateInLocale(IDateTime inputDate, IString locale) 
 	//@doc{Print an input date using a specific locale and a default format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd",new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForDate(inputDate);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print time " + inputDate + " in locale: " + locale.getValue());
-		}
+		return printDateInLocale(inputDate, values.string("yyyy-MM-dd"), locale);
 	}
 
 	public IValue printTime(IDateTime inputTime, IString formatString) 
 	//@doc{Print an input time using the given format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue()); 
-			Calendar cal = getCalendarForTime(inputTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print time " + inputTime + " with format: " + formatString.getValue());
-		}			
+		return printDateTime(inputTime, prepareFormatter(formatString));
 	}
 	
 	public IValue printTime(IDateTime inputTime) 
 	//@doc{Print an input time using a default format string}
 	{
-		SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss.SSSZ"); 
-		Calendar cal = getCalendarForTime(inputTime);
-		sd.setCalendar(cal);
-		return values.string(sd.format(cal.getTime()));
+		return printTime(inputTime, values.string("HH:mm:ss.SSSZZZZZ"));
 	}
 	
 	public IValue printTimeInLocale(IDateTime inputTime, IString formatString, IString locale) 
 	//@doc{Print an input time using a specific locale and format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue(),new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForTime(inputTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print time " + inputTime + " in locale: " + locale.getValue());
-		}
+		return printDateTime(inputTime, prepareFormatterLocale(formatString, locale));
 	}
 
 	public IValue printTimeInLocale(IDateTime inputTime, IString locale) 
 	//@doc{Print an input time using a specific locale and a default format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat("HH:mm:ss.SSSZ",new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForTime(inputTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print time " + inputTime + " in locale: " + locale.getValue());
-		}
+		return printDateTimeInLocale(inputTime, values.string("HH:mm:ss.SSSZZZZZ"), locale);
 	}
 
 	public IValue printDateTime(IDateTime inputDateTime, IString formatString) 
 	//@doc{Print an input datetime using the given format string}
 	{
+		return printDateTime(inputDateTime, prepareFormatter(formatString));
+	}
+	
+	private IString printDateTime(IDateTime input, DateTimeFormatter fmt) {
 		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue()); 
-			Calendar cal = getCalendarForDateTime(inputDateTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print datetime " + inputDateTime + " using format string: " + formatString.getValue());
-		}		
+			return values.string(fmt.format(DateTimeConversions.dateTimeToJava(input)));
+		} catch (RuntimeException iae) {
+			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print datetime " + input + " using formatter: " + fmt);
+		}
 	}
 
 	public IValue printDateTime(IDateTime inputDateTime) 
 	//@doc{Print an input datetime using a default format string}
 	{
-		SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ"); 
-		Calendar cal = getCalendarForDateTime(inputDateTime);
-		sd.setCalendar(cal);
-		return values.string(sd.format(cal.getTime()));
+		return printDateTime(inputDateTime, values.string("yyyy-MM-dd HH:mm:ss.SSSZZZZZ"));
 	}
 	
 	public IValue printDateTimeInLocale(IDateTime inputDateTime, IString formatString, IString locale) 
 	//@doc{Print an input datetime using a specific locale and format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat(formatString.getValue(),new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForDateTime(inputDateTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print datetime " + inputDateTime + " using format string: " + formatString.getValue() +
-					" in locale: " + locale.getValue());
-		}
+		return printDateTime(inputDateTime, prepareFormatterLocale(formatString, locale));
+	}
+
+	private static DateTimeFormatter prepareFormatter(IString formatString) {
+		return DateTimeFormatter.ofPattern(formatString.getValue());
+	}
+	
+	private static DateTimeFormatter prepareFormatterLocale(IString formatString, IString locale) {
+		return prepareFormatterLocale(formatString.getValue(), locale.getValue());
+	}
+
+	private static DateTimeFormatter prepareFormatterLocale(String formatString, String locale) {
+		return DateTimeFormatter.ofPattern(formatString)
+			.withLocale(Locale.forLanguageTag(locale));
 	}
 
 	public IValue printDateTimeInLocale(IDateTime inputDateTime, IString locale) 
 	//@doc{Print an input datetime using a specific locale and a default format string}
 	{
-		try {
-			SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ",new ULocale(locale.getValue())); 
-			Calendar cal = getCalendarForDateTime(inputDateTime);
-			sd.setCalendar(cal);
-			return values.string(sd.format(cal.getTime()));
-		} catch (IllegalArgumentException iae) {
-			throw RuntimeExceptionFactory.dateTimePrintingError("Cannot print datetime " + inputDateTime + " in locale: " + locale.getValue());
-		}
+		return printDateTimeInLocale(inputDateTime, values.string("yyyy-MM-dd HH:mm:ss.SSS ZZZZZ"), locale);
 	}
 	
     public IValue daysDiff(IDateTime dtStart, IDateTime dtEnd)
     //@doc{Increment the years by a given amount.}
-    {
-            if (!(dtStart.isTime() || dtEnd.isTime())) {
-                    Calendar startCal = Calendar.getInstance();
-                    startCal.setTimeInMillis(dtStart.getInstant());
-                    Calendar endCal = Calendar.getInstance();
-                    endCal.setTimeInMillis(dtEnd.getInstant());
-                    
-                    return values.integer(startCal.fieldDifference(endCal.getTime(), Calendar.DAY_OF_MONTH));
-            }
-            throw RuntimeExceptionFactory.invalidUseOfTimeException("Both inputs must include dates.");
-    }
+	{
+		if (!(dtStart.isTime() || dtEnd.isTime())) {
+			Temporal start = DateTimeConversions.dateTimeToJava(dtStart);
+			Temporal end = DateTimeConversions.dateTimeToJava(dtEnd);
+			return values.integer(ChronoUnit.DAYS.between(start, end));
+		}
+		throw RuntimeExceptionFactory.invalidUseOfTimeException("Both inputs must include dates.");
+	}
 
     /*
 	 * Graph
