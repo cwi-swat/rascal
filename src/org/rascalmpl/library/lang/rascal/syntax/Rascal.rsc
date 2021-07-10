@@ -103,29 +103,25 @@ syntax Sym
 	| parameter: "&" Nonterminal nonterminal 
 	| parametrized: Nonterminal nonterminal >> "[" "[" {Sym ","}+ parameters "]"
 	| \start: "start" "[" Nonterminal nonterminal "]"
-	| labeled: Sym symbol NonterminalLabel label
 // literals 
 	| characterClass: Class charClass 
 	| literal: StringConstant string 
 	| caseInsensitiveLiteral: CaseInsensitiveStringConstant cistring
 // regular expressions
-	| iter: Sym symbol "+" 
-	| iterStar: Sym symbol "*" 
 	| iterSep: "{" Sym symbol Sym sep "}" "+" 
 	| iterStarSep: "{" Sym symbol Sym sep "}" "*" 
-	| optional: Sym symbol "?" 
 	| alternative: "(" Sym first "|" {Sym "|"}+ alternatives ")"
 	| sequence: "(" Sym first Sym+ sequence ")"
-	// TODO: MinimalIter: Sym symbol IntegerConstant minimal "+"
-	// TODO: MinimalIterSep: "{" Sym symbol Symbol sep "}" IntegerConstant minimal "+"
-	// TODO | Permutation: "(" Sym first "~" {Sym "~"}+ participants ")"
-	// TODO | Combination: "(" Sym first "#" {Sym "#"}+ elements ")"
 	| empty: "(" ")"
 // conditionals
-	| column: Sym symbol "@" IntegerLiteral column 
-	| endOfLine: Sym symbol "$" 
 	| startOfLine: "^" Sym symbol
+	> column: Sym symbol "@" IntegerLiteral column 
+	| labeled: Sym symbol NonterminalLabel label
+	| optional: Sym symbol "?" 
+	| endOfLine: Sym symbol "$" 
 	| except:   Sym symbol "!" NonterminalLabel label
+	| iter: Sym symbol "+" 
+	| iterStar: Sym symbol "*" 
 	>  
 	assoc ( 
 	  left  ( follow:     Sym symbol  "\>\>" Sym match
